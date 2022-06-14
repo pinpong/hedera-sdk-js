@@ -201,12 +201,10 @@ async function testExecuteWithSigner(signer, requests, expects) {
         try {
             await request.executeWithSigner(signer);
         } catch (error) {
-            if (!(error instanceof hashgraph.PrecheckStatusError)) {
-                expects.push({
-                    name: `${request.constructor.name}: can execute request`,
-                    condition: false,
-                });
-            }
+            expects.push({
+                name: `${request.constructor.name}: can execute request`,
+                condition: !(error instanceof hashgraph.PrecheckStatusError),
+            });
         }
     }
 }
@@ -219,9 +217,16 @@ export async function test(signer) {
     /** @type {ExpectClause[]} */
     const expects = [];
 
-    await testFreezeWithSigner(signer, TRANSACTIONS, expects);
-    await testSignWithSigner(signer, TRANSACTIONS, expects);
-    await testExecuteWithSigner(signer, REQUESTS, expects);
+    try {
+        await testFreezeWithSigner(signer, TRANSACTIONS, expects);
+        await testSignWithSigner(signer, TRANSACTIONS, expects);
+        await testExecuteWithSigner(signer, REQUESTS, expects);
+    } catch (error) {
+        expects.push({
+            name: /** @type {Error} */ (error).toString(),
+            condition: false,
+        });
+    }
 
     return expects;
 }
